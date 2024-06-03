@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 20px;
+        }
+        #chat-container {
+            width: 80%;
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #chat-header {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        #messages {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 400px;
+            overflow-y: scroll;
+            margin-bottom: 20px;
+        }
+        .message-container {
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .message-container strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .user-message {
+            text-align: right;
+        }
+        .agent-message {
+            text-align: left;
+        }
+        .message-content {
+            background-color: #007bff;
+            color: white;
+            border-radius: 20px;
+            padding: 10px 15px;
+            display: inline-block;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .timestamp {
+            font-size: 0.75rem;
+            color: #999;
+            text-align: right;
+            display: block;
+            margin-top: 5px;
+        }
+        #input-container {
+            display: flex;
+        }
+        #query {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #send-button {
+            padding: 10px 20px;
+            margin-left: 10px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div id="chat-container">
+    <div id="chat-header">Chat AI</div>
+    <div id="messages"></div>
+    <div id="input-container">
+        <input type="text" id="query" placeholder="Enter your query...">
+        <button id="send-button">Send</button>
+    </div>
+</div>
+
+<script>
+    document.getElementById('send-button').addEventListener('click', () => {
+        const query = document.getElementById('query').value;
+        if (query) {
+            sendQuery(query);
+        }
+    });
+
+    function sendQuery(query) {
+        const messagesDiv = document.getElementById('messages');
+        const userMessage = `
+            <div class="message-container user-message">
+                <strong>You:</strong>
+                <span class="message-content">${query}</span>
+                <span class="timestamp">${getCurrentTime()}</span>
+            </div>`;
+        messagesDiv.innerHTML += userMessage;
+        document.getElementById('query').value = ''; // Clear input field
+
+        fetch('http://127.0.0.1:8000/query', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query: query })
+        }).then(response => {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let partialMessage = '';
+
+            function readStream() {
+                reader.read().then(({ done, value }) => {
+                    if (done) {
+                        showAgentMessage(partialMessage);
+                        return;
+                    }
+
+                    partialMessage += decoder.decode(value, { stream: true });
+                    readStream();
+                });
+            }
+
+            readStream();
+        });
+    }
+
+    function showAgentMessage(message) {
+        const messagesDiv = document.getElementById('messages');
+        const agentContainer = document.createElement('div');
+        agentContainer.classList.add('message-container', 'agent-message');
+        const agentStrong = document.createElement('strong');
+        agentStrong.textContent = 'Chatbot:';
+        const agentContent = document.createElement('span');
+        agentContent.classList.add('message-content');
+        const agentTimestamp = document.createElement('span');
+        agentTimestamp.classList.add('timestamp');
+        agentTimestamp.textContent = getCurrentTime();
+
+        agentContainer.appendChild(agentStrong);
+        agentContainer.appendChild(agentContent);
+        agentContainer.appendChild(agentTimestamp);
+
+        messagesDiv.appendChild(agentContainer);
+
+        const words = message.split(' ');
+        let index = 0;
+
+        function showNextWord() {
+            if (index < words.length) {
+                agentContent.textContent += (index > 0 ? ' ' : '') + words[index++];
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                setTimeout(showNextWord, 100); // Adjust typing speed here
+            }
+        }
+
+        showNextWord();
+    }
+
+    function getCurrentTime() {
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
+    }
+</script>
+</body>
+</html>

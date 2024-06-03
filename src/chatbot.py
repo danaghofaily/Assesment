@@ -27,7 +27,7 @@ async def create_openai_chain(model_name: str):
 
 
 async def create_replicate(model_name: str, model_kwargs: dict):
-    os.environ["REPLICATE_API_TOKEN"] = "r8_OJ6ZPDnp4YntyYePWFJwvUWhsfZMTxr3Yk1Z2"
+    os.environ["REPLICATE_API_TOKEN"] = "<YOUR REPLICATE API KEY>"
     model = Replicate(model=model_name, model_kwargs=model_kwargs, streaming=True,
                       replicate_api_token=os.getenv("REPLICATE_API_KEY"))
     prompt = PromptTemplate.from_template(template=BASE_PROMPT)

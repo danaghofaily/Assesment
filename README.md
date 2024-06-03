@@ -91,8 +91,10 @@ uvicorn app:app --reload
 ```
 This command will start the backend server and enable hot-reloading for development purposes.
 
+```sh
 Replace <YOUR-OPENAI-KEY> with your own secret key in .env file.
 Replace <YOUR REPLICATE API KEY> with your own replicate secret key in chatbot.py file
+```
 
 ## Frontend
 
